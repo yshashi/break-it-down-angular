@@ -1,0 +1,89 @@
+<header class="page-header">
+  <p class="eyebrow">Episode 3</p>
+  <h1>Signals meet RxJS: toSignal and toObservable</h1>
+  <p class="lead">Keep your Observables. Read them like signals. Reach for operators only where they earn it.</p>
+</header>
+
+<section class="step">
+  <h2><span class="step-no">1</span> Observable to Signal</h2>
+  <p class="file">src/app/episodes/ep03-rxjs-interop/toy-interop.ts (myToSignal) + ep03.page.ts</p>
+  <div class="stats">
+    <div class="stat"><span class="stat-label">myToSignal(interval)</span><span class="stat-value" data-testid="my-clock">{{ myClock() }}</span></div>
+    <div class="stat"><span class="stat-label">toSignal(interval)</span><span class="stat-value" data-testid="clock">{{ clock() }}</span></div>
+    <div class="stat">
+      <span class="stat-label">toSignal(api.getAll())</span>
+      <span class="stat-value" data-testid="catalog">
+        @if (catalog().length) { {{ catalog().length }} products } @else { loading... }
+      </span>
+    </div>
+  </div>
+  <p class="hint">Open DevTools, then navigate to another episode: the console logs "clock unsubscribed". No ngOnDestroy anywhere.</p>
+</section>
+
+<section class="step">
+  <h2><span class="step-no">2</span> Signal to Observable</h2>
+  <p class="file">src/app/episodes/ep03-rxjs-interop/toy-interop.ts (myToObservable)</p>
+  <div class="row">
+    <button (click)="count.update(v => v + 1)">count + 1</button>
+    <button class="secondary" (click)="setThreeTimesSynchronously()">set() three times in one click</button>
+  </div>
+  <div class="compare">
+    <div class="panel">
+      <h3><code>myToObservable(count)</code> emitted</h3>
+      <p class="mono" data-testid="my-emissions">{{ myEmissions().join(', ') }}</p>
+    </div>
+    <div class="panel">
+      <h3><code>toObservable(count)</code> emitted</h3>
+      <p class="mono" data-testid="emissions">{{ emissions().join(', ') }}</p>
+    </div>
+  </div>
+  <p class="hint">Three synchronous writes, one emission. It is an effect underneath, and effects run after the writes settle.</p>
+</section>
+
+<section class="step">
+  <h2><span class="step-no">3</span> In a real project: search that hits an API</h2>
+  <p class="file">src/app/episodes/ep03-rxjs-interop/ep03.page.ts (naiveResults, results) + shared/product-api.ts</p>
+  <div class="compare">
+    <div class="panel bad">
+      <h3>No debounce</h3>
+      <input #naive class="search" placeholder="Type 'leather' quickly..." [value]="naiveQuery()" (input)="onNaiveInput(naive.value)" />
+      <p class="counters" data-testid="naive-stats">
+        {{ naiveKeystrokes() }} keystrokes · {{ naiveStats().sent }} {{ naiveStats().sent === 1 ? "request" : "requests" }} · {{ naiveStats().cancelled }} cancelled
+      </p>
+      <ul class="plain">
+        @for (p of naiveResults(); track p.id) { <li>{{ p.name }}</li> }
+      </ul>
+    </div>
+    <div class="panel good">
+      <h3>debounceTime(300) + switchMap</h3>
+      <input #box class="search" placeholder="Type 'leather' quickly..." [value]="query()" (input)="onInput(box.value)" />
+      <p class="counters" data-testid="debounced-stats">
+        {{ keystrokes() }} keystrokes · {{ debouncedStats().sent }} {{ debouncedStats().sent === 1 ? "request" : "requests" }} · {{ debouncedStats().cancelled }} cancelled
+      </p>
+      <ul class="plain">
+        @for (p of results(); track p.id) { <li>{{ p.name }}</li> }
+      </ul>
+    </div>
+  </div>
+  <h3>Network log (latest first)</h3>
+  <table class="log-table">
+    <tbody>
+      @for (r of recentRequests(); track r.id) {
+        <tr [class]="r.status"><td>#{{ r.id }}</td><td>{{ r.channel }}</td><td>q="{{ r.query }}"</td><td>{{ r.status }}</td></tr>
+      } @empty {
+        <tr><td colspan="4" class="empty">No requests yet</td></tr>
+      }
+    </tbody>
+  </table>
+  <button class="ghost" (click)="resetSearch()">Reset search demo</button>
+</section>
+
+<section class="step">
+  <h2><span class="step-no">4</span> The mistake: toSignal inside a method</h2>
+  <p class="file">src/app/episodes/ep03-rxjs-interop/ep03.page.ts (loadInsideAMethod)</p>
+  <button class="danger" (click)="loadInsideAMethod()">Call toSignal() from a click handler</button>
+  @if (mistakeError(); as message) {
+    <pre class="error" data-testid="mistake-error">{{ message }}</pre>
+  }
+  <p class="hint">Create it once, in a field initializer or the constructor. Need a new request on demand? That is what resource() and httpResource() are for (Season 2).</p>
+</section>

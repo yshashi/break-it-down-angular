@@ -1,0 +1,68 @@
+<header class="page-header">
+  <p class="eyebrow">Episode 1</p>
+  <h1>Signals 101: signal, computed, effect</h1>
+  <p class="lead">Reads track. Writes notify. Everything else is detail.</p>
+  <button class="ghost" (click)="reset()">Reset demo</button>
+</header>
+
+<section class="step">
+  <h2><span class="step-no">1</span> A signal from scratch (no Angular)</h2>
+  <p class="file">src/app/episodes/ep01-signals-101/toy-signal.ts</p>
+  <div class="row">
+    <button (click)="toyIncrement()">toy count + 1</button>
+    <button class="secondary" (click)="toySetSame()">write the same value</button>
+  </div>
+  <ol class="log" data-testid="toy-log">
+    @for (line of toyLog(); track $index) {
+      <li>{{ line }}</li>
+    }
+  </ol>
+  <p class="hint">Writing the same value adds nothing to the log: <code>Object.is(old, new)</code> short-circuits the notify step.</p>
+</section>
+
+<section class="step">
+  <h2><span class="step-no">2</span> The real API</h2>
+  <p class="file">src/app/episodes/ep01-signals-101/ep01.page.ts</p>
+  <div class="stats">
+    <div class="stat"><span class="stat-label">count()</span><span class="stat-value" data-testid="count">{{ count() }}</span></div>
+    <div class="stat"><span class="stat-label">doubled()</span><span class="stat-value" data-testid="doubled">{{ doubled() }}</span></div>
+  </div>
+  <div class="row">
+    <button (click)="count.set(5)">count.set(5)</button>
+    <button (click)="count.update(v => v + 1)">count.update(v =&gt; v + 1)</button>
+    <button class="secondary" (click)="count.set(count())">count.set(count())</button>
+  </div>
+  <ol class="log" data-testid="effect-log">
+    @for (line of effectLog(); track $index) {
+      <li>{{ line }}</li>
+    }
+  </ol>
+  <p class="hint">Click <code>count.update</code> three times fast: effects are batched, so you may see fewer log lines than clicks.</p>
+</section>
+
+<section class="step">
+  <h2><span class="step-no">3</span> In a real component: product search</h2>
+  <p class="file">src/app/episodes/ep01-signals-101/ep01.page.ts (query, products, filtered)</p>
+  <input #box class="search" placeholder="Search products..." [value]="query()" (input)="query.set(box.value)" />
+  <p class="result-count" data-testid="result-count">{{ filtered().length }} of {{ products().length }} products</p>
+  <ul class="chips">
+    @for (product of filtered(); track product.id) {
+      <li>{{ product.name }} <small>{{ product.category }}</small></li>
+    } @empty {
+      <li class="empty">No product matches "{{ query() }}"</li>
+    }
+  </ul>
+</section>
+
+<section class="step">
+  <h2><span class="step-no">4</span> The week-one bug: mutating in place</h2>
+  <p class="file">src/app/episodes/ep01-signals-101/ep01.page.ts (addTodo*)</p>
+  <div class="row">
+    <button class="danger" (click)="addTodoWithPush()">todos().push(...)</button>
+    <button class="danger" (click)="addTodoWithPushThenSet()">push, then todos.set(sameArray)</button>
+    <button class="good" (click)="addTodoImmutably()">todos.update(l =&gt; [...l, item])</button>
+  </div>
+  <p class="result-count" data-testid="todo-count">todoCount() = {{ todoCount() }}</p>
+  <app-todo-list data-testid="todo-list" [todos]="todos()" />
+  <p class="hint">Click the red buttons: nothing changes. Then click the green one: every "lost" item appears at once, because they were in the array all along. Nobody was told.</p>
+</section>

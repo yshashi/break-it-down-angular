@@ -1,0 +1,102 @@
+<header class="page-header">
+  <p class="eyebrow">Episode 2</p>
+  <h1>linkedSignal: the signal that syncs itself</h1>
+  <p class="lead">Derived by default. Writable when a human needs to override it.</p>
+</header>
+
+<section class="step">
+  <h2><span class="step-no">1</span> The problem: reset on change, but still clickable</h2>
+  <p class="file">src/app/episodes/ep02-linked-signal/ep02.page.ts (category, selectedPlain, selectedLinked)</p>
+  <div class="tabs" role="tablist">
+    @for (c of categories; track c) {
+      <button role="tab" [class.active]="category() === c" (click)="category.set(c)">{{ c }}</button>
+    }
+  </div>
+
+  <div class="compare">
+    <div class="panel bad">
+      <h3>Before: <code>signal()</code></h3>
+      <ul class="cards">
+        @for (p of productsInCategory(); track p.id) {
+          <li><button [class.selected]="selectedPlain() === p.id" (click)="selectedPlain.set(p.id)">{{ p.name }}</button></li>
+        }
+      </ul>
+      <p data-testid="selected-plain">Selected: <strong>{{ nameOf(selectedPlain()) }}</strong></p>
+      @if (!isInCategory(selectedPlain())) {
+        <p class="warning">Selected product is not in "{{ category() }}". Stale state.</p>
+      }
+    </div>
+
+    <div class="panel good">
+      <h3>After: <code>linkedSignal()</code></h3>
+      <ul class="cards">
+        @for (p of productsInCategory(); track p.id) {
+          <li><button [class.selected]="selectedLinked() === p.id" (click)="selectedLinked.set(p.id)">{{ p.name }}</button></li>
+        }
+      </ul>
+      <p data-testid="selected-linked">Selected: <strong>{{ nameOf(selectedLinked()) }}</strong></p>
+    </div>
+  </div>
+  <p class="hint">Click a card in each panel, then switch category. Only the right panel resets.</p>
+</section>
+
+<section class="step">
+  <h2><span class="step-no">2</span> The long form: <code>source</code> + <code>previous</code></h2>
+  <p class="file">src/app/episodes/ep02-linked-signal/ep02.page.ts (selectedKeep)</p>
+  <label class="slider">
+    Max price: <strong>{{ maxPrice() }} EUR</strong>
+    <input #price type="range" min="20" max="220" step="10" [value]="maxPrice()" (input)="maxPrice.set(+price.value)" />
+  </label>
+  <ul class="cards">
+    @for (p of affordable(); track p.id) {
+      <li><button [class.selected]="selectedKeep() === p.id" (click)="selectedKeep.set(p.id)">{{ p.name }} <small>{{ p.price }}</small></button></li>
+    } @empty {
+      <li class="empty">Nothing under {{ maxPrice() }} EUR</li>
+    }
+  </ul>
+  <p data-testid="selected-keep">Selected: <strong>{{ nameOf(selectedKeep()) }}</strong></p>
+  <p class="hint">Pick something cheap, then move the slider: your pick survives. Pick something expensive and slide below its price: it falls back to the first item.</p>
+</section>
+
+<section class="step">
+  <h2><span class="step-no">3</span> In a real project: pagination</h2>
+  <p class="file">src/app/episodes/ep02-linked-signal/ep02.page.ts (pagePlain, pageLinked)</p>
+  <input #filter class="search" placeholder="Filter by customer, e.g. anna" [value]="filterText()" (input)="filterText.set(filter.value)" />
+
+  <div class="compare">
+    <div class="panel bad">
+      <h3>Before: <code>signal(1)</code></h3>
+      <div class="pager">
+        <button (click)="pagePlain.set(pagePlain() - 1)" [disabled]="pagePlain() <= 1">Prev</button>
+        <span data-testid="page-plain">Page {{ pagePlain() }} of {{ totalPages() }}</span>
+        <button (click)="pagePlain.set(pagePlain() + 1)" [disabled]="pagePlain() >= totalPages()">Next</button>
+      </div>
+      <table>
+        <tbody>
+          @for (o of rowsPlain(); track o.id) {
+            <tr><td>#{{ o.id }}</td><td>{{ o.customer }}</td><td class="num">{{ o.total }} EUR</td></tr>
+          } @empty {
+            <tr><td colspan="3" class="warning">Empty page. The results exist, you are just on the wrong page.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="panel good">
+      <h3>After: <code>linkedSignal</code></h3>
+      <div class="pager">
+        <button (click)="pageLinked.set(pageLinked() - 1)" [disabled]="pageLinked() <= 1">Prev</button>
+        <span data-testid="page-linked">Page {{ pageLinked() }} of {{ totalPages() }}</span>
+        <button (click)="pageLinked.set(pageLinked() + 1)" [disabled]="pageLinked() >= totalPages()">Next</button>
+      </div>
+      <table>
+        <tbody>
+          @for (o of rowsLinked(); track o.id) {
+            <tr><td>#{{ o.id }}</td><td>{{ o.customer }}</td><td class="num">{{ o.total }} EUR</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <p class="hint">Go to page 6 in both panels, then type "anna".</p>
+</section>
